@@ -104,4 +104,154 @@ function updateMenuVisibility() {
 
   // Admin은 모두 가능
   if (role === CONFIG.ROLES.ADMIN) {
-    // 모든 메뉴
+    // 모든 메뉴 표시
+  }
+}
+
+// 출근 처리
+async function handleCheckIn() {
+  if (!currentUser) return;
+
+  // GPS 위치 가져오기
+  if (!navigator.geolocation) {
+    alert('Your browser does not support GPS location');
+    return;
+  }
+
+  const checkInBtn = document.getElementById('checkinCard');
+  checkInBtn.style.opacity = '0.6';
+  checkInBtn.style.pointerEvents = 'none';
+
+  try {
+    // GPS 위치 요청
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        // API 호출
+        const result = await API.checkIn(currentUser.id, lat, lng);
+
+        if (result && result.success) {
+          alert('✅ ' + result.data.message);
+          await loadAnnouncements(); // 공지사항 새로고침
+        } else {
+          alert('❌ ' + (result.message || 'Check-in failed'));
+        }
+
+        checkInBtn.style.opacity = '1';
+        checkInBtn.style.pointerEvents = 'auto';
+      },
+      (error) => {
+        console.error('GPS Error:', error);
+        alert('Failed to get GPS location. Please enable location services.');
+        checkInBtn.style.opacity = '1';
+        checkInBtn.style.pointerEvents = 'auto';
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+
+  } catch (error) {
+    console.error('Check-in error:', error);
+    alert('Check-in failed: ' + error.message);
+    checkInBtn.style.opacity = '1';
+    checkInBtn.style.pointerEvents = 'auto';
+  }
+}
+
+// 퇴근 처리
+async function handleCheckOut() {
+  if (!currentUser) return;
+
+  if (!confirm('Are you sure you want to check out?')) {
+    return;
+  }
+
+  const checkOutBtn = document.getElementById('checkoutCard');
+  checkOutBtn.style.opacity = '0.6';
+  checkOutBtn.style.pointerEvents = 'none';
+
+  try {
+    const result = await API.checkOut(currentUser.id);
+
+    if (result && result.success) {
+      alert('✅ ' + result.data.message + '\nTotal hours: ' + result.data.totalHours);
+    } else {
+      alert('❌ ' + (result.message || 'Check-out failed'));
+    }
+
+  } catch (error) {
+    console.error('Check-out error:', error);
+    alert('Check-out failed: ' + error.message);
+  } finally {
+    checkOutBtn.style.opacity = '1';
+    checkOutBtn.style.pointerEvents = 'auto';
+  }
+}
+
+// 페이지 이동 함수들
+function goToPurchase() {
+  alert('Purchase module - Coming soon!\nYou will be able to upload receipts here.');
+}
+
+function goToSales() {
+  if (currentUser.role === CONFIG.ROLES.STAFF) {
+    alert('You do not have permission to access Sales module');
+    return;
+  }
+  alert('Sales module - Coming soon!\nYou will be able to submit daily closing reports here.');
+}
+
+function goToAttendance() {
+  alert('Attendance module - Coming soon!\nYou will be able to view attendance records here.');
+}
+
+function goToPayroll() {
+  if (currentUser.role === CONFIG.ROLES.STAFF) {
+    alert('Payroll module - Coming soon!\nYou will be able to view your salary information here.');
+    return;
+  }
+  alert('Payroll module - Coming soon!\nYou will be able to manage employee salaries here.');
+}
+
+// HTML 이스케이프 (XSS 방지)
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// 새로고침 함수
+async function refreshDashboard() {
+  await loadAnnouncements();
+  alert('Dashboard refreshed!');
+}
+```
+
+4. **"Commit new file" 클릭**
+
+---
+
+## 🎉 **축하해! Frontend 완성!**
+
+### ✅ 완료된 파일 목록:
+```
+docs/
+├── index.html          ✅
+├── dashboard.html      ✅
+├── css/
+│   └── style.css      ✅
+└── js/
+    ├── config.js      ✅
+    ├── api.js         ✅
+    ├── auth.js        ✅
+    └── dashboard.js   ✅
