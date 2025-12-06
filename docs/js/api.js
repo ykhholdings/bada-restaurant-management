@@ -1,9 +1,9 @@
-// api.js - API 통신 모듈
+// api.js - API 통신 모듈 (JSONP 방식)
 
 const API = {
-  // API 호출 함수
+  // API 호출 함수 (JSONP)
   async call(action, data = {}) {
-    try {
+    return new Promise((resolve, reject) => {
       const token = localStorage.getItem(CONFIG.STORAGE_KEY);
       
       const payload = {
@@ -12,38 +12,45 @@ const API = {
         token: token
       };
 
-      const response = await fetch(CONFIG.API_URL, {
-        method: 'POST',
-        mode: 'cors',
-        cache: 'no-cache',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const result = await response.json();
+      // 콜백 함수 이름
+      const callbackName = 'apiCallback_' + Date.now();
       
-      // 세션 만료 체크
-      if (!result.success && result.message && 
-          result.message.includes('Invalid or expired session')) {
-        // 로그아웃 처리
-        localStorage.removeItem(CONFIG.STORAGE_KEY);
-        localStorage.removeItem(CONFIG.USER_KEY);
-        window.location.href = 'index.html';
-        return null;
-      }
+      // 전역 콜백 함수 생성
+      window[callbackName] = function(result) {
+        // 콜백 함수 제거
+        delete window[callbackName];
+        document.body.removeChild(script);
+        
+        // 세션 만료 체크
+        if (!result.success && result.message && 
+            result.message.includes('Invalid or expired session')) {
+          localStorage.removeItem(CONFIG.STORAGE_KEY);
+          localStorage.removeItem(CONFIG.USER_KEY);
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        resolve(result);
+      };
 
-      return result;
-
-    } catch (error) {
-      console.error('API Error:', error);
-      throw new Error('Failed to connect to server. Please check your connection.');
-    }
+      // JSONP 스크립트 태그 생성
+      const script = document.createElement('script');
+      const params = new URLSearchParams({
+        action: action,
+        data: JSON.stringify(data),
+        token: token || '',
+        callback: callbackName
+      });
+      
+      script.src = CONFIG.API_URL + '?' + params.toString();
+      script.onerror = function() {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        reject(new Error('Failed to connect to server'));
+      };
+      
+      document.body.appendChild(script);
+    });
   },
 
   // 로그인
