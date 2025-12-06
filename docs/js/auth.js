@@ -105,4 +105,52 @@ function showAlert(message, type) {
 
   // 3초 후 자동 숨김
   setTimeout(() => {
-    alertBox.classList.remove
+    alertBox.classList.remove('show');
+  }, 3000);
+}
+
+// 현재 사용자 정보 가져오기
+function getCurrentUser() {
+  const userJson = localStorage.getItem(CONFIG.USER_KEY);
+  if (!userJson) return null;
+  
+  try {
+    return JSON.parse(userJson);
+  } catch (error) {
+    console.error('Failed to parse user data:', error);
+    return null;
+  }
+}
+
+// 로그아웃
+async function logout() {
+  try {
+    await API.logout();
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+    // 로컬 스토리지 클리어
+    localStorage.removeItem(CONFIG.STORAGE_KEY);
+    localStorage.removeItem(CONFIG.USER_KEY);
+    
+    // 로그인 페이지로 이동
+    window.location.href = 'index.html';
+  }
+}
+
+// 권한 체크
+function checkPermission(requiredRole) {
+  const user = getCurrentUser();
+  if (!user) return false;
+
+  const roleHierarchy = {
+    'admin': 3,
+    'manager': 2,
+    'staff': 1
+  };
+
+  const userLevel = roleHierarchy[user.role] || 0;
+  const requiredLevel = roleHierarchy[requiredRole] || 0;
+
+  return userLevel >= requiredLevel;
+}
