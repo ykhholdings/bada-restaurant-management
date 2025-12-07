@@ -41,10 +41,10 @@ async function handleLogin(e) {
     // API 호출
     const result = await API.login(email, password);
 
-    if (result.success && result.data.success) {
+    if (result.ok && result.data) {
       // 로그인 성공
       const userData = result.data;
-      
+
       // 토큰과 사용자 정보 저장
       localStorage.setItem(CONFIG.STORAGE_KEY, userData.token);
       localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(userData.user));
@@ -59,7 +59,7 @@ async function handleLogin(e) {
 
     } else {
       // 로그인 실패
-      showAlert(result.data.message || 'Invalid email or password', 'error');
+      showAlert(result.error || 'Invalid email or password', 'error');
       loginBtn.disabled = false;
       btnText.textContent = 'Login';
       btnSpinner.classList.add('hidden');
@@ -79,8 +79,8 @@ async function handleLogin(e) {
 async function validateAndRedirect() {
   try {
     const result = await API.validateSession();
-    
-    if (result && result.success) {
+
+    if (result && result.ok) {
       // 유효한 세션 - 대시보드로
       window.location.href = 'dashboard.html';
     } else {

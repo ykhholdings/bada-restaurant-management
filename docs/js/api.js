@@ -27,10 +27,10 @@ const API = {
       }
 
       const result = await response.json();
-      
+
       // 세션 만료 체크
-      if (!result.success && result.message && 
-          result.message.includes('Invalid or expired session')) {
+      if (!result.ok && result.error &&
+          result.error.includes('Invalid or expired session')) {
         localStorage.removeItem(CONFIG.STORAGE_KEY);
         localStorage.removeItem(CONFIG.USER_KEY);
         window.location.href = 'index.html';
