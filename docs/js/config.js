@@ -2,7 +2,7 @@
 
 const CONFIG = {
   // Apps Script 배포 URL
-  API_URL: 'https://script.google.com/macros/s/AKfycbyU9Ytzg04ZSH0VFX7MlnrzML4ff9DZCIpV4GFTJz23iirXopohHNyd_WuTEvcIT0Br/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbw9_hvbM7C9CmuAodljAVKtNBAd_A6aTqRZfoNE1cr1A_MaW6zLBuLrU1IbecYuyte1/exec',
   
   // 로컬 스토리지 키
   STORAGE_KEY: 'bada_auth_token',
