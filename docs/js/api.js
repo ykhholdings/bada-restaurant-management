@@ -110,7 +110,43 @@ const API = {
   },
 
   async uploadPurchase(imageBase64, approverId, branchId) {
-    return await this.call('purchase.upload', { image_base64: imageBase64, approver_id: approverId, branch_id: branchId });
+    // Use POST for large payloads (images)
+    const token = localStorage.getItem(CONFIG.STORAGE_KEY);
+
+    const payload = {
+      action: 'purchase.upload',
+      data: {
+        image_base64: imageBase64,
+        approver_id: approverId,
+        branch_id: branchId
+      },
+      token: token
+    };
+
+    try {
+      const response = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      // Check for session expiry
+      if (!result.ok && result.error && result.error.includes('Invalid or expired session')) {
+        localStorage.removeItem(CONFIG.STORAGE_KEY);
+        localStorage.removeItem(CONFIG.USER_KEY);
+        window.location.href = 'index.html';
+        return null;
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw new Error('Failed to upload. Please try again.');
+    }
   },
 
   async getPurchases(branchId, status, dateFrom, dateTo) {
