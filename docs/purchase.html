@@ -398,74 +398,35 @@
       }
     }
 
-    function submitViaIframe(imageBase64, approverId, branchId) {
-      return new Promise((resolve, reject) => {
-        const token = localStorage.getItem(CONFIG.STORAGE_KEY);
+    async function submitViaIframe(imageBase64, approverId, branchId) {
+      const token = localStorage.getItem(CONFIG.STORAGE_KEY);
 
-        // Create hidden iframe
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.name = 'upload_iframe_' + Date.now();
-        document.body.appendChild(iframe);
+      const payload = {
+        action: 'purchase.upload',
+        data: {
+          image_base64: imageBase64,
+          approver_id: approverId,
+          branch_id: branchId
+        },
+        token: token
+      };
 
-        // Create form
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = CONFIG.API_URL;
-        form.target = iframe.name;
+      // Use FormData to avoid CORS preflight
+      const formData = new FormData();
+      formData.append('payload', JSON.stringify(payload));
 
-        // Add hidden inputs
-        const payload = {
-          action: 'purchase.upload',
-          data: {
-            image_base64: imageBase64,
-            approver_id: approverId,
-            branch_id: branchId
-          },
-          token: token
-        };
+      try {
+        const response = await fetch(CONFIG.API_URL, {
+          method: 'POST',
+          body: formData
+        });
 
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'payload';
-        input.value = JSON.stringify(payload);
-        form.appendChild(input);
-
-        document.body.appendChild(form);
-
-        // Set timeout
-        const timeout = setTimeout(() => {
-          cleanup();
-          reject(new Error('Upload timeout'));
-        }, 60000); // 60 seconds for Claude OCR
-
-        // Listen for iframe load
-        iframe.onload = function() {
-          try {
-            const response = iframe.contentDocument.body.textContent;
-            const result = JSON.parse(response);
-            cleanup();
-            resolve(result);
-          } catch (error) {
-            cleanup();
-            reject(new Error('Failed to parse response'));
-          }
-        };
-
-        iframe.onerror = function() {
-          cleanup();
-          reject(new Error('Form submission failed'));
-        };
-
-        function cleanup() {
-          clearTimeout(timeout);
-          if (form.parentNode) form.parentNode.removeChild(form);
-          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-        }
-
-        // Submit form
-        form.submit();
-      });
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error('Submit error:', error);
+        throw new Error('Upload failed: ' + error.message);
+      }
     }
 
     function compressAndConvertImage(file) {
