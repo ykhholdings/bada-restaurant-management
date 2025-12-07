@@ -1,32 +1,19 @@
 // api.js - API 통신 모듈
 
 const API = {
-  // API 호출 함수
+  // API 호출 함수 (JSONP 방식)
   async call(action, data = {}) {
     try {
       const token = localStorage.getItem(CONFIG.STORAGE_KEY);
-      
+
       const payload = {
         action: action,
         data: data,
         token: token
       };
 
-      const response = await fetch(CONFIG.API_URL, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        redirect: 'follow'
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const result = await response.json();
+      // JSONP 방식으로 호출
+      const result = await this._jsonpRequest(payload);
 
       // 세션 만료 체크
       if (!result.ok && result.error &&
@@ -43,6 +30,43 @@ const API = {
       console.error('API Error:', error);
       throw new Error('Failed to connect to server. Please check your connection.');
     }
+  },
+
+  // JSONP 요청 헬퍼
+  _jsonpRequest(payload) {
+    return new Promise((resolve, reject) => {
+      const callbackName = 'jsonp_callback_' + Math.random().toString(36).substr(2, 9);
+      const timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error('Request timeout'));
+      }, 30000);
+
+      const cleanup = () => {
+        clearTimeout(timeoutId);
+        delete window[callbackName];
+        if (script && script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+
+      window[callbackName] = (response) => {
+        cleanup();
+        resolve(response);
+      };
+
+      const script = document.createElement('script');
+      const url = CONFIG.API_URL +
+                  '?callback=' + encodeURIComponent(callbackName) +
+                  '&payload=' + encodeURIComponent(JSON.stringify(payload));
+
+      script.src = url;
+      script.onerror = () => {
+        cleanup();
+        reject(new Error('Script load error'));
+      };
+
+      document.head.appendChild(script);
+    });
   },
 
   async login(email, password) {
