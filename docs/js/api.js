@@ -41,7 +41,6 @@ const API = {
     }
   },
 
-  // 나머지 함수들 동일...
   async login(email, password) {
     return await this.call('auth.login', { email, password });
   },
