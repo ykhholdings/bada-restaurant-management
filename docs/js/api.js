@@ -6,12 +6,6 @@ const API = {
     return new Promise((resolve, reject) => {
       const token = localStorage.getItem(CONFIG.STORAGE_KEY);
       
-      const payload = {
-        action: action,
-        data: data,
-        token: token
-      };
-
       // 콜백 함수 이름
       const callbackName = 'apiCallback_' + Date.now();
       
