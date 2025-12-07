@@ -127,7 +127,7 @@ const API = {
       const response = await fetch(CONFIG.API_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'text/plain'
         },
         body: JSON.stringify(payload)
       });
