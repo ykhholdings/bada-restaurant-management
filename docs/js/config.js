@@ -2,7 +2,7 @@
 
 const CONFIG = {
   // Apps Script Deployment URL
-  API_URL: 'https://script.google.com/macros/s/AKfycbz7YCY5Pk45cm6CSBOQL0FxAv_sTvHiNhFj38tXYzT2z1pBVJqAdenDxk1L2rqA_OOX/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbwZUSZcIaU87ucQ7WA8w9IX2L8q0-9JNblDjWxpqlLFOqQJ3VJeumufIfEOffXYnqPQ/exec',
 
   // Local Storage Keys
   STORAGE_KEY: 'bada_auth_token',
