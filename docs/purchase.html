@@ -406,10 +406,10 @@
           const img = new Image();
 
           img.onload = () => {
-            // Calculate new dimensions (max 1200px)
+            // Calculate new dimensions (max 800px for smaller file size)
             let width = img.width;
             let height = img.height;
-            const maxDimension = 1200;
+            const maxDimension = 800;
 
             if (width > maxDimension || height > maxDimension) {
               if (width > height) {
@@ -429,8 +429,12 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Convert to base64 with compression (0.7 quality for JPEG)
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            // Convert to base64 with aggressive compression (0.5 quality)
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+
+            // Log size for debugging
+            console.log('Compressed image size:', Math.round(compressedBase64.length / 1024), 'KB');
+
             resolve(compressedBase64);
           };
 
