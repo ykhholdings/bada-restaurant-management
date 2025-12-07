@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BADA Restaurant - Login</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="login-header">
+        <div class="logo">🍜</div>
+        <h1>BADA Restaurant</h1>
+        <p>Management System</p>
+      </div>
+
+      <!-- 알림 메시지 -->
+      <div id="alertBox" class="alert"></div>
+
+      <!-- 로그인 폼 -->
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            placeholder="your@email.com"
+            required
+            autocomplete="email"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            placeholder="Enter your password"
+            required
+            autocomplete="current-password"
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="loginBtn">
+          <span id="btnText">Login</span>
+          <span id="btnSpinner" class="spinner hidden"></span>
+        </button>
+      </form>
+
+      <div style="margin-top: 20px; text-align: center; color: #999; font-size: 0.85em;">
+        <p>Test Accounts:</p>
+        <p style="font-size: 0.8em;">Admin: admin@bada.ae / admin123</p>
+        <p style="font-size: 0.8em;">Manager: bhab@bada.ae / bhab123</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
