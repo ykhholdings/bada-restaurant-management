@@ -67,7 +67,7 @@ function updateMenuVisibility() {
 
 // Navigation functions
 function goToPurchase() {
-  alert('🧾 Purchase Module\n\nComing soon!\n\nYou will be able to:\n- Upload receipts\n- Track purchases\n- Manage approvals');
+  window.location.href = 'purchase.html';
 }
 
 function goToSales() {
