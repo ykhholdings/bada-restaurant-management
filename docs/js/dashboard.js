@@ -1,257 +1,121 @@
-// dashboard.js - 대시보드 로직
+// dashboard.js - Dashboard Logic
 
 let currentUser = null;
 
-// 페이지 로드 시
+// Page Load
 document.addEventListener('DOMContentLoaded', async function() {
-  // 로그인 체크
+  // Check authentication
   const token = localStorage.getItem(CONFIG.STORAGE_KEY);
   if (!token) {
     window.location.href = 'index.html';
     return;
   }
 
-  // 사용자 정보 로드
+  // Load user info
   currentUser = getCurrentUser();
   if (!currentUser) {
     window.location.href = 'index.html';
     return;
   }
 
-  // UI 업데이트
+  // Update UI
   updateUserInfo();
 
-  // 공지사항 로드
-  await loadAnnouncements();
+  // Hide announcements for now
+  document.querySelector('.announcement-section').style.display = 'none';
 
-  // 권한에 따른 메뉴 표시/숨김
+  // Update menu visibility based on role
   updateMenuVisibility();
 });
 
-// 사용자 정보 표시
+// Update user info display
 function updateUserInfo() {
   document.getElementById('userName').textContent = currentUser.name;
   document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
-  
-  // 지점 정보
+
+  // Branch info
   const branch = CONFIG.BRANCHES[currentUser.branch];
   if (branch) {
-    document.getElementById('userBranch').textContent = 
+    document.getElementById('userBranch').textContent =
       branch.name + ' - ' + branch.location;
   } else if (currentUser.branch === 'ALL') {
     document.getElementById('userBranch').textContent = 'All Branches';
   }
 }
 
-// 공지사항 로드
-async function loadAnnouncements() {
-  const listElement = document.getElementById('announcementList');
-  
-  try {
-    const result = await API.getAnnouncements();
-    
-    if (result && result.success && result.data.announcements) {
-      const announcements = result.data.announcements;
-      
-      if (announcements.length === 0) {
-        listElement.innerHTML = '<div class="no-announcements">No announcements at this time</div>';
-        return;
-      }
-
-      // 공지사항 HTML 생성
-      listElement.innerHTML = announcements.map(announcement => `
-        <div class="announcement-item">
-          <div class="announcement-header">
-            <span class="announcement-branch">${announcement.branchName}</span>
-            <span class="announcement-date">${announcement.created}</span>
-          </div>
-          <div class="announcement-message">${escapeHtml(announcement.message)}</div>
-        </div>
-      `).join('');
-
-    } else {
-      listElement.innerHTML = '<div class="no-announcements">Failed to load announcements</div>';
-    }
-
-  } catch (error) {
-    console.error('Load announcements error:', error);
-    listElement.innerHTML = '<div class="no-announcements">Error loading announcements</div>';
-  }
-}
-
-// 권한에 따른 메뉴 표시
+// Update menu visibility based on role
 function updateMenuVisibility() {
   const role = currentUser.role;
 
-  // Staff는 구매 업로드, 출퇴근만 가능
+  // Staff: limited access
   if (role === CONFIG.ROLES.STAFF) {
-    // 매출, 급여 카드 숨김
+    // Hide sales card
     const salesCard = document.getElementById('salesCard');
-    const payrollCard = document.getElementById('payrollCard');
-    
     if (salesCard) salesCard.style.display = 'none';
-    if (payrollCard) {
-      payrollCard.onclick = function() {
-        alert('You can only view your own payroll information');
-      };
-    }
   }
 
-  // Manager는 자기 지점만
+  // Manager: own branch only
   if (role === CONFIG.ROLES.MANAGER) {
-    // 모든 메뉴 표시
+    // All menus visible
   }
 
-  // Admin은 모두 가능
+  // Admin: all access
   if (role === CONFIG.ROLES.ADMIN) {
-    // 모든 메뉴 표시
+    // All menus visible
   }
 }
 
-// 출근 처리
-async function handleCheckIn() {
-  if (!currentUser) return;
-
-  // GPS 위치 가져오기
-  if (!navigator.geolocation) {
-    alert('Your browser does not support GPS location');
-    return;
-  }
-
-  const checkInBtn = document.getElementById('checkinCard');
-  checkInBtn.style.opacity = '0.6';
-  checkInBtn.style.pointerEvents = 'none';
-
-  try {
-    // GPS 위치 요청
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-
-        // API 호출
-        const result = await API.checkIn(currentUser.id, lat, lng);
-
-        if (result && result.success) {
-          alert('✅ ' + result.data.message);
-          await loadAnnouncements(); // 공지사항 새로고침
-        } else {
-          alert('❌ ' + (result.message || 'Check-in failed'));
-        }
-
-        checkInBtn.style.opacity = '1';
-        checkInBtn.style.pointerEvents = 'auto';
-      },
-      (error) => {
-        console.error('GPS Error:', error);
-        alert('Failed to get GPS location. Please enable location services.');
-        checkInBtn.style.opacity = '1';
-        checkInBtn.style.pointerEvents = 'auto';
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-
-  } catch (error) {
-    console.error('Check-in error:', error);
-    alert('Check-in failed: ' + error.message);
-    checkInBtn.style.opacity = '1';
-    checkInBtn.style.pointerEvents = 'auto';
-  }
-}
-
-// 퇴근 처리
-async function handleCheckOut() {
-  if (!currentUser) return;
-
-  if (!confirm('Are you sure you want to check out?')) {
-    return;
-  }
-
-  const checkOutBtn = document.getElementById('checkoutCard');
-  checkOutBtn.style.opacity = '0.6';
-  checkOutBtn.style.pointerEvents = 'none';
-
-  try {
-    const result = await API.checkOut(currentUser.id);
-
-    if (result && result.success) {
-      alert('✅ ' + result.data.message + '\nTotal hours: ' + result.data.totalHours);
-    } else {
-      alert('❌ ' + (result.message || 'Check-out failed'));
-    }
-
-  } catch (error) {
-    console.error('Check-out error:', error);
-    alert('Check-out failed: ' + error.message);
-  } finally {
-    checkOutBtn.style.opacity = '1';
-    checkOutBtn.style.pointerEvents = 'auto';
-  }
-}
-
-// 페이지 이동 함수들
+// Navigation functions
 function goToPurchase() {
-  alert('Purchase module - Coming soon!\nYou will be able to upload receipts here.');
+  alert('🧾 Purchase Module\n\nComing soon!\n\nYou will be able to:\n- Upload receipts\n- Track purchases\n- Manage approvals');
 }
 
 function goToSales() {
   if (currentUser.role === CONFIG.ROLES.STAFF) {
-    alert('You do not have permission to access Sales module');
+    alert('⛔ Access Denied\n\nYou do not have permission to access Sales module.');
     return;
   }
-  alert('Sales module - Coming soon!\nYou will be able to submit daily closing reports here.');
+  alert('💰 Sales Module\n\nComing soon!\n\nYou will be able to:\n- Submit daily closing\n- View sales reports\n- Track revenue');
 }
 
 function goToAttendance() {
-  alert('Attendance module - Coming soon!\nYou will be able to view attendance records here.');
+  alert('📅 Attendance Module\n\nComing soon!\n\nYou will be able to:\n- View attendance records\n- Check work history\n- Download reports');
 }
 
 function goToPayroll() {
   if (currentUser.role === CONFIG.ROLES.STAFF) {
-    alert('Payroll module - Coming soon!\nYou will be able to view your salary information here.');
+    alert('💵 Payroll\n\nComing soon!\n\nYou will be able to view your salary information.');
     return;
   }
-  alert('Payroll module - Coming soon!\nYou will be able to manage employee salaries here.');
+  alert('💵 Payroll Module\n\nComing soon!\n\nYou will be able to:\n- Manage salaries\n- Calculate payments\n- Generate payslips');
 }
 
-// HTML 이스케이프 (XSS 방지)
-function escapeHtml(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, m => map[m]);
+function handleCheckIn() {
+  alert('✅ Check In\n\nComing soon!\n\nGPS-based attendance check-in will be available here.');
 }
 
-// 새로고침 함수
-async function refreshDashboard() {
-  await loadAnnouncements();
-  alert('Dashboard refreshed!');
+function handleCheckOut() {
+  alert('🏁 Check Out\n\nComing soon!\n\nAttendance check-out will be available here.');
 }
-```
 
-4. **"Commit new file" 클릭**
+// Get current user from localStorage
+function getCurrentUser() {
+  const userJson = localStorage.getItem(CONFIG.USER_KEY);
+  if (!userJson) return null;
 
----
+  try {
+    return JSON.parse(userJson);
+  } catch (error) {
+    console.error('Failed to parse user data:', error);
+    return null;
+  }
+}
 
-## 🎉 **축하해! Frontend 완성!**
-
-### ✅ 완료된 파일 목록:
-```
-docs/
-├── index.html          ✅
-├── dashboard.html      ✅
-├── css/
-│   └── style.css      ✅
-└── js/
-    ├── config.js      ✅
-    ├── api.js         ✅
-    ├── auth.js        ✅
-    └── dashboard.js   ✅
+// Logout function
+function logout() {
+  if (confirm('Are you sure you want to logout?')) {
+    localStorage.removeItem(CONFIG.STORAGE_KEY);
+    localStorage.removeItem(CONFIG.USER_KEY);
+    window.location.href = 'index.html';
+  }
+}
